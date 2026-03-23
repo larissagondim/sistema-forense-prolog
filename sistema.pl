@@ -1,8 +1,8 @@
 % Analisando a presença dos suspeitos
 
-presente(diego, sala_principal).
+presente(larissa, sala_principal).
 presente(maria, sala_principal).
-presente(saulo, corredor).
+presente(laura, corredor).
 
 
 % Verificando o status dos sensores
@@ -13,13 +13,13 @@ sensor_ativado(peso, sala_principal).
 
 % Verificando que habilidades técnicas possuem os suspeitos
 
-habilidade(diego, desativar_laser).
+habilidade(larissa, desativar_laser).
 habilidade(maria, manipular_objetos).
-habilidade(saulo, limpeza).
+habilidade(laura, limpeza).
 
 % Verificando quais são os álibis
 
-alibi_confirmado(saulo).
+alibi_confirmado(laura).
 
 
 % Regras auxiliares
