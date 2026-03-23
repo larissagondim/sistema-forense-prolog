@@ -1,6 +1,6 @@
 # Sistema Especialista para Investigação Forense em Museu (Prolog)
 
-Este projeto implementa um sistema especialista em Prolog para auxiliar na investigação de um roubo em museu.
+Este projeto realizado por Larissa Gondim, Laura Morais e Maria Luiza Uchoa do segundo período de Ciência da Computação implementa um sistema especialista em Prolog para auxiliar na investigação de um roubo em museu.
 
 ## Objetivo
 Simular o processo investigativo por meio da correlação de evidências, identificando suspeitos com base em:
