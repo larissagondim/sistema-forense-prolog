@@ -8,6 +8,7 @@ Simular o processo investigativo por meio da correlação de evidências, identi
 - Eventos detectados por sensores
 - Habilidades necessárias para o crime
 - Ausência de álibi
+- Sistema de pontuação para averiguar principais suspeitos
 
 ## Tecnologias
 - Prolog (SWI-Prolog)
@@ -35,6 +36,7 @@ src/
 - Identificação automática de suspeitos (`culpado/1`)
 - Verificação de habilidades e presença
 - Exclusão de suspeitos com álibi
+- Soma das evidências para atribuir pontuações aos suspeitos
 - Explicação detalhada da decisão do sistema
 
 ## Interface Web
