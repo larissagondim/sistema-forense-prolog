@@ -99,7 +99,3 @@ Conclusão: CULPADO
 
 ## Objetivos
 Este projeto tem fins acadêmicos, com foco na aplicação de sistemas especialistas e lógica de programação em um cenário investigativo.
-
-## Documentação
-O detalhamento científico deste sistema, incluindo a modelagem forense e os resultados dos testes, pode ser encontrado no artigo completo:
- [Baixar/Visualizar Artigo (PDF)](docs/sistema-forense-com-prolog.pdf)
