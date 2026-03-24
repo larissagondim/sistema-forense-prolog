@@ -16,12 +16,16 @@ Simular o processo investigativo por meio da correlação de evidências, identi
 
 ## Estrutura
 
+## Estrutura
+
+```text
 src/
 ├── python/
-    ├── app.py
-    ├── main.py
-├── prolog/
-    ├── sistema.pl
+│   ├── app.py
+│   └── main.py
+└── prolog/
+    └── sistema.pl
+```
 
 - `sistema.pl`: código principal do sistema especialista
 - `main.py`: verificação interativa via terminal
