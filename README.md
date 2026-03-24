@@ -15,6 +15,14 @@ Simular o processo investigativo por meio da correlação de evidências, identi
 - Streamlit (interface web)
 
 ## Estrutura
+
+src/
+├── python/
+    ├── app.py
+    ├── main.py
+├── prolog/
+    ├── sistema.pl
+
 - `sistema.pl`: código principal do sistema especialista
 - `main.py`: verificação interativa via terminal
 - `app.py`: interface web interativa com Streamlit
