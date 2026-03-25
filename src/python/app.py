@@ -5,7 +5,7 @@ import os
 # config prolog
 prolog = Prolog()
 
-base_dir = os.path.dirname(os.path.dirname(__file__))
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 caminho = os.path.join(base_dir, "prolog", "sistema.pl")
 
 prolog.consult(caminho)
