@@ -2,86 +2,81 @@
 from pyswip import Prolog
 import time
 
-# configurando prolog
 prolog = Prolog()
 prolog.consult("../prolog/sistema.pl")
 
-# função principal para listagem de suspeitos
-def listar_suspeitos():
-    print("\nANÁLISE DE SUSPEITOS\n")
 
-    resultados = list(prolog.query("pontuacao(X, P), nivel_suspeita(X, N)"))
+def escolher_crime():
+    crimes = list(prolog.query("crime(C)"))
+    lista = [c["C"] for c in crimes]
 
-    if resultados:
-        for r in resultados:
-            nome = r["X"]
-            pontos = r["P"]
-            nivel = r["N"]
+    print("\nCRIMES DISPONÍVEIS:")
+    for i, c in enumerate(lista, 1):
+        print(f"{i} - {c}")
 
-            if nivel == "alta":
-                print(f"🚨 {nome} | Pontos: {pontos} | ALTA suspeita")
-            elif nivel == "media":
-                print(f"⚠️ {nome} | Pontos: {pontos} | MÉDIA suspeita")
-            else:
-                print(f"ℹ️ {nome} | Pontos: {pontos} | BAIXA suspeita")
-    else:
-        print("Nenhum suspeito encontrado.")
+    op = int(input("Escolha o crime: "))
+    return lista[op - 1]
 
-# função para listagem de culpados
-def listar_culpados():
-    print("\nCULPADOS IDENTIFICADOS\n")
 
-    resultados = list(prolog.query("culpado(X)"))
+def ranking_suspeitos():
+    crime = escolher_crime()
+    print(f"\nRANKING PARA: {crime}\n")
+
+    resultados = list(prolog.query(f"ranking({crime}, Lista)"))
 
     if resultados:
-        for r in resultados:
-            print("-", r["X"])
+        for score, pessoa in resultados[0]["Lista"]:
+            print(f"{pessoa} -> {round(score, 2)}")
     else:
-        print("Nenhum culpado encontrado.")
+        print("Sem dados.")
 
-# função para mostrar a explicação de cada suspeito
-def explicar_suspeito():
-    nome = input("\nDigite o nome do suspeito: ").lower()
 
-    try:
-        time.sleep(1)
-        resultado = list(prolog.query(f"explica_texto({nome}, Texto)"))
+def explicar():
+    crime = escolher_crime()
+    nome = input("Nome do suspeito: ").lower()
 
-        if resultado:
-            print("\n" + resultado[0]["Texto"])
-        else:
-            print("Suspeito não encontrado.")
-    except Exception as e:
-        print("Erro:", e)
+    query = f"explica({nome}, {crime}, Texto)"
+    resultado = list(prolog.query(query))
+
+    if resultado:
+        print("\n" + resultado[0]["Texto"])
+    else:
+        print("Não encontrado.")
+
+
+def inferencia_reversa():
+    crime = escolher_crime()
+
+    print("\nPERFIL NECESSÁRIO:")
+    perfil = list(prolog.query(f"perfil_necessario({crime}, P)"))
+    print(perfil[0]["P"])
+
+    print("\nPOSSÍVEIS AUTORES:")
+    autores = list(prolog.query(f"possivel_autor({crime}, X)"))
+    for a in autores:
+        print("-", a["X"])
 
 
 def menu():
     while True:
-        print("\nSISTEMA FORENSE | MENU")
-        print("1 - Analisar suspeitos")
-        print("2 - Listar culpados")
-        print("3 - Explicar suspeito")
+        print("\n=== SISTEMA FORENSE AVANÇADO ===")
+        print("1 - Ranking de suspeitos")
+        print("2 - Explicar suspeito")
+        print("3 - Inferência reversa")
         print("4 - Sair")
 
-        op = input("\nEscolha uma opção: ")
+        op = input("Opção: ")
 
         if op == "1":
-            time.sleep(1)
-            listar_suspeitos()
+            ranking_suspeitos()
         elif op == "2":
-            time.sleep(1)
-            listar_culpados()
+            explicar()
         elif op == "3":
-            time.sleep(1)
-            explicar_suspeito()
+            inferencia_reversa()
         elif op == "4":
-            print("Encerrando sistema...")
-            time.sleep(1)
-            print("Obrigada por utilizar!")
-            time.sleep(1)
             break
         else:
-            print("Opção inválida.")
+            print("Inválido")
 
 
 if __name__ == "__main__":
