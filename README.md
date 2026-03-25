@@ -36,14 +36,14 @@ src/
 - Identificação automática de suspeitos (`culpado/1`)
 - Verificação de habilidades e presença
 - Exclusão de suspeitos com álibi
-- Soma das evidências para atribuir pontuações aos suspeitos
 - Explicação detalhada da decisão do sistema
-
-## Interface Web
-Foi desenvolvida uma interface web utilizando Streamlit, permitindo:
-
-- Listar suspeitos identificados
+- Suporte a múltiplos crimes
+- Múltiplas cenas do crime
+- Análise temporal (Timeline)
+- Sistema de pontuação avançado
 - Inserir o nome de um suspeito
+- Ranking de suspeitos
+- Inferência reversa
 - Visualizar a explicação completa da análise diretamente na tela
 
 ## Como executar
