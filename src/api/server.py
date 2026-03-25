@@ -23,20 +23,35 @@ prolog_lock = threading.Lock()
 
 
 @app.get("/api/suspeitos")
-def get_suspeitos():
+def get_suspeitos(crime: str = "roubo_quadro"):
     with prolog_lock:
         resultados = []
-        for nome in SUSPECTS:
-            r = list(prolog.query(f"pontuacao({nome}, P), nivel_suspeita({nome}, N)"))
-            if r:
-                resultados.append({"nome": nome, "pontuacao": r[0]["P"], "nivel": r[0]["N"]})
+        query = list(prolog.query(f"ranking({crime}, Lista)", maxresult=1))
+        if not query:
+            raise HTTPException(status_code=404, detail="Crime não encontrado")
+
+        # ranking returns list of tuples (Pontuacao, Pessoa) em ordem desc
+        for pontuacao, pessoa in query[0]["Lista"]:
+            nivel = list(prolog.query(f"nivel_suspeita({pessoa}, {crime}, N)", maxresult=1))
+            nivel_text = nivel[0]["N"] if nivel else "desconhecido"
+            resultados.append({"nome": str(pessoa), "pontuacao": float(pontuacao), "nivel": str(nivel_text)})
         return resultados
 
 
 @app.get("/api/explicacao/{nome}")
 def get_explicacao(nome: str):
     with prolog_lock:
-        resultado = list(prolog.query(f"explica_texto({nome.lower()}, Texto)"))
+        crime: str = "roubo_quadro"
+        resultado = list(prolog.query(f"explica({nome.lower()}, {crime}, Texto)", maxresult=1))
         if not resultado:
-            raise HTTPException(status_code=404, detail="Suspeito não encontrado")
-        return {"nome": nome.lower(), "texto": resultado[0]["Texto"]}
+            raise HTTPException(status_code=404, detail="Explicação não encontrada")
+        return {"nome": nome.lower(), "texto": str(resultado[0]["Texto"])}
+
+
+@app.get("/api/explicacao/{crime}/{nome}")
+def get_explicacao_crime(crime: str, nome: str):
+    with prolog_lock:
+        resultado = list(prolog.query(f"explica({nome.lower()}, {crime}, Texto)", maxresult=1))
+        if not resultado:
+            raise HTTPException(status_code=404, detail="Explicação não encontrada")
+        return {"nome": nome.lower(), "texto": str(resultado[0]["Texto"])}
