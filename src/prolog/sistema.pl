@@ -1,122 +1,169 @@
-% Onde foi o crime
+% Crimes
+crime(roubo_quadro).
+crime(furto_joia).
 
-local_crime(sala_principal).
+% Locais dos crimes
+local_crime(roubo_quadro, sala_principal).
+local_crime(furto_joia, sala_secundaria).
 
-% Quem estava na cena
+% Timeline da ocorrencia dum crime
+evento(roubo_quadro, 10, sensor_laser).
+evento(roubo_quadro, 12, sensor_peso).
+evento(furto_joia, 20, sensor_peso).
 
-presente(larissa, sala_principal).
-presente(maria, sala_principal).
-presente(laura, corredor).
+% Presença (com tempo)
+presente(larissa, sala_principal, 9).
+presente(larissa, sala_principal, 11).
+presente(maria, sala_principal, 10).
+presente(laura, corredor, 10).
+presente(laura, sala_secundaria, 20).
 
-% Status dos sensores
+% Sensores com confiabilidade
+sensor(sensor_laser, sala_principal, 0.9).
+sensor(sensor_peso, sala_principal, 0.8).
+sensor(sensor_peso, sala_secundaria, 0.7).
 
-sensor_ativado(laser, sala_principal).
-sensor_ativado(peso, sala_principal).
+% Habilidades (nível)
+habilidade(larissa, desativar_laser, 9).
+habilidade(maria, manipular_objetos, 8).
+habilidade(laura, manipular_objetos, 6).
 
-% Habilidades de quem estava na cena
+% Álibis (tempo + confiança)
+alibi(laura, 10, 0.9).
+alibi(maria, 10, 0.3).
 
-habilidade(larissa, desativar_laser).
-habilidade(maria, manipular_objetos).
-habilidade(laura, limpeza).
+% Habilidades necessárias por crime
+necessario(roubo_quadro, desativar_laser).
+necessario(roubo_quadro, manipular_objetos).
+necessario(furto_joia, manipular_objetos).
 
-% Confirmação dos álibis 
+% REGRAS DE TIMELINE
 
-alibi_confirmado(laura).
+% Pessoa estava na cena no momento do evento
+na_cena(Crime, Pessoa) :-
+    evento(Crime, Tempo, _),
+    local_crime(Crime, Local),
+    presente(Pessoa, Local, Tempo).
 
-% Habilidades necessárias para realizar o crime
+% Detecta coerência temporal
+coerente_tempo(Pessoa, Crime) :-
+    evento(Crime, TempoEvento, _),
+    presente(Pessoa, _, TempoPessoa),
+    Diff is abs(TempoEvento - TempoPessoa),
+    Diff =< 2. % margem de erro
 
-habilidade_necessaria(desativar_laser).
-habilidade_necessaria(manipular_objetos).
+% EVENTO DO CRIME
 
-% REGRAS BASE
+grau_evento(Crime, Grau) :-
+    findall(Conf,
+        (evento(Crime, _, Sensor),
+         sensor(Sensor, _, Conf)),
+        Lista),
+    media(Lista, Grau).
 
-na_cena(X) :-
-    local_crime(Local),
-    presente(X, Local).
+% HABILIDADE POR CRIME
 
-houve_evento :-
-    local_crime(Local),
-    sensor_ativado(laser, Local),
-    sensor_ativado(peso, Local).
+grau_habilidade(Pessoa, Crime, Grau) :-
+    findall(Peso,
+        (necessario(Crime, H),
+         habilidade(Pessoa, H, Nivel),
+         Peso is Nivel / 10),
+        Lista),
+    (Lista = [] -> Grau = 0 ; media(Lista, Grau)).
 
-possui_habilidade_necessaria(X) :-
-    habilidade(X, H),
-    habilidade_necessaria(H).
+% ÁLIBI TEMPORAL
 
-sem_alibi(X) :-
-    \+ alibi_confirmado(X).
+grau_sem_alibi(Pessoa, Crime, Grau) :-
+    evento(Crime, Tempo, _),
+    (alibi(Pessoa, Tempo, Conf) ->
+        Grau is 1 - Conf ;
+        Grau = 1).
 
-% Sistema de pontuação
+% MÉDIA
 
-ponto_cena(X, 1) :- na_cena(X), !.
-ponto_cena(_, 0).
+media(Lista, Media) :-
+    sum_list(Lista, Soma),
+    length(Lista, N),
+    N > 0,
+    Media is Soma / N.
 
-ponto_evento(1) :- houve_evento, !.
-ponto_evento(0).
+% PONTUAÇÃO POR CRIME
 
-ponto_habilidade(X, 1) :- possui_habilidade_necessaria(X), !.
-ponto_habilidade(_, 0).
+pontuacao(Pessoa, Crime, Total) :-
+    (na_cena(Crime, Pessoa) -> P1 = 1 ; P1 = 0),
+    (coerente_tempo(Pessoa, Crime) -> P2 = 1 ; P2 = 0),
 
-ponto_alibi(X, 1) :- sem_alibi(X), !.
-ponto_alibi(_, 0).
+    grau_evento(Crime, P3),
+    grau_habilidade(Pessoa, Crime, P4),
+    grau_sem_alibi(Pessoa, Crime, P5),
 
-% Soma total
-pontuacao(X, Total) :-
-    ponto_cena(X, P1),
-    ponto_evento(P2),
-    ponto_habilidade(X, P3),
-    ponto_alibi(X, P4),
-    Total is P1 + P2 + P3 + P4.
+    Total is (P1 * 0.25) +
+             (P2 * 0.15) +
+             (P3 * 0.2) +
+             (P4 * 0.25) +
+             (P5 * 0.15).
 
-% Classificação
+% CLASSIFICAÇÃO
 
-nivel_suspeita(X, alta) :-
-    pontuacao(X, P),
-    P >= 4.
+nivel_suspeita(Pessoa, Crime, alta) :-
+    pontuacao(Pessoa, Crime, P),
+    P >= 0.7.
 
-nivel_suspeita(X, media) :-
-    pontuacao(X, P),
-    P >= 2,
-    P < 4.
+nivel_suspeita(Pessoa, Crime, media) :-
+    pontuacao(Pessoa, Crime, P),
+    P >= 0.4, P < 0.7.
 
-nivel_suspeita(X, baixa) :-
-    pontuacao(X, P),
-    P < 2.
+nivel_suspeita(Pessoa, Crime, baixa) :-
+    pontuacao(Pessoa, Crime, P),
+    P < 0.4.
 
-% Mantém compatibilidade com "culpado"
-culpado(X) :-
-    nivel_suspeita(X, alta).
+% RANKING POR CRIME
 
-% Melhor explicação
+ranking(Crime, ListaOrdenada) :-
+    setof((P, Pessoa),
+        pontuacao(Pessoa, Crime, P),
+        Lista),
+    sort(0, @>=, Lista, ListaOrdenada).
 
-explica_texto(X, Texto) :-
-    pontuacao(X, P),
-    nivel_suspeita(X, Nivel),
-    findall(L, explicar_linha(X, L), Linhas),
-    atomic_list_concat(Linhas, '\n', Base),
+% INFERÊNCIA REVERSA
+
+% "Que tipo de pessoa conseguiria cometer esse crime?"
+
+perfil_necessario(Crime, Perfil) :-
+    findall(H, necessario(Crime, H), Habilidades),
+    Perfil = perfil{
+        habilidades: Habilidades,
+        precisa_estar_na_cena: sim
+    }.
+
+% "Quem satisfaz parcialmente os requisitos?"
+possivel_autor(Crime, Pessoa) :-
+    habilidade(Pessoa, H, _),
+    necessario(Crime, H).
+
+% EXPLICAÇÃO AVANÇADA
+
+explica(Pessoa, Crime, Texto) :-
+    pontuacao(Pessoa, Crime, P),
+    nivel_suspeita(Pessoa, Crime, Nivel),
+
+    grau_evento(Crime, GE),
+    grau_habilidade(Pessoa, Crime, GH),
+    grau_sem_alibi(Pessoa, Crime, GA),
+
     format(atom(Texto),
-        '~w\nPontuação: ~w\nNível de suspeita: ~w',
-        [Base, P, Nivel]).
-
-explicar_linha(X, Linha) :-
-    format(atom(Linha), 'Análise do suspeito: ~w', [X]).
-
-explicar_linha(X, Linha) :-
-    (na_cena(X) ->
-        Linha = '- Estava na cena do crime (+1)' ;
-        Linha = '- NÃO estava na cena do crime (+0)').
-
-explicar_linha(_, Linha) :-
-    (houve_evento ->
-        Linha = '- Evento confirmado pelos sensores (+1)' ;
-        Linha = '- Nenhum evento detectado (+0)').
-
-explicar_linha(X, Linha) :-
-    (possui_habilidade_necessaria(X) ->
-        Linha = '- Possui habilidade relevante (+1)' ;
-        Linha = '- NÃO possui habilidade relevante (+0)').
-
-explicar_linha(X, Linha) :-
-    (sem_alibi(X) ->
-        Linha = '- Não possui álibi (+1)' ;
-        Linha = '- Possui álibi (+0)').
+'==== ANALISE FORENSE ====\n\
+Crime: ~w\n\
+Suspeito: ~w\n\
+Pontuacao: ~2f\n\
+Nivel: ~w\n\
+\nDetalhes:\n\
+- Presenca na cena: ~w\n\
+- Coerencia temporal: ~w\n\
+- Grau do evento: ~2f\n\
+- Grau de habilidade: ~2f\n\
+- Grau sem alibi: ~2f\n',
+    [Crime, Pessoa, P, Nivel,
+     (na_cena(Crime, Pessoa) -> 'SIM' ; 'NAO'),
+     (coerente_tempo(Pessoa, Crime) -> 'SIM' ; 'NAO'),
+     GE, GH, GA]).

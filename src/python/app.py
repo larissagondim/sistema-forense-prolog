@@ -7,64 +7,65 @@ prolog = Prolog()
 
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 caminho = os.path.join(base_dir, "prolog", "sistema.pl")
-
 prolog.consult(caminho)
 
-# interface web
+st.set_page_config(page_title="Sistema Forense", layout="wide")
 
-st.title("Sistema de Investigação Forense")
-st.write("Sistema especialista em Prolog para análise de suspeitos.")
+st.title("Sistema de Investigação Forense Avançado")
 
-# lista de suspeitos com nível
+crimes = [c["C"] for c in prolog.query("crime(C)")]
+crime = st.selectbox("Selecione o crime", crimes)
 
-if st.button("Analisar suspeitos"):
-    resultados = list(prolog.query("pontuacao(X, P), nivel_suspeita(X, N)"))
+st.subheader("Ranking de Suspeitos")
 
-    if resultados:
-        st.success("Resultado da análise:")
+if st.button("Gerar ranking"):
+    resultado = list(prolog.query(f"ranking({crime}, Lista)"))
 
-        for r in resultados:
-            nome = r["X"]
-            pontos = r["P"]
-            nivel = r["N"]
+    if resultado:
+        lista = resultado[0]["Lista"]
+        st.write(lista)
+        for item in lista:
+            try:
+                item = item.strip().lstrip(',')
+                item = item.replace('(', '').replace(')', '')
+                score_str, pessoa = item.split(',')
+                score = round(float(score_str.strip()), 2)
+                pessoa = pessoa.strip()
 
-            if nivel == "alta":
-                st.error(f"🚨 {nome} | Pontos: {pontos} | ALTA suspeita")
-            elif nivel == "media":
-                st.warning(f"⚠️ {nome} | Pontos: {pontos} | MÉDIA suspeita")
+            except:
+                continue
+
+            if score >= 0.7:
+                st.error(f"ALERTA! {pessoa} — {score}")
+            elif score >= 0.4:
+                st.warning(f"CUIDADO! {pessoa} — {score}")
             else:
-                st.info(f"ℹ️ {nome} | Pontos: {pontos} | BAIXA suspeita")
-    else:
-        st.warning("Nenhum suspeito encontrado.")
+                st.info(f"OK! {pessoa} — {score}")
 
-# lista dos culpados
 
-if st.button("Listar culpados"):
-    resultados = list(prolog.query("culpado(X)"))
+st.subheader("Explicação")
 
-    if resultados:
-        st.error("Culpados identificados:")
-        for r in resultados:
-            st.write(f"- {r['X']}")
-    else:
-        st.success("Nenhum culpado identificado.")
+nome = st.text_input("Nome do suspeito")
 
-# explicação
-
-nome = st.text_input("Digite o nome do suspeito:")
-
-if st.button("Explicar suspeito"):
+if st.button("Explicar"):
     if nome:
-        try:
-            query = f"explica_texto({nome.lower()}, Texto)"
-            resultado = list(prolog.query(query))
+        query = f"explica({nome.lower()}, {crime}, Texto)"
+        resultado = list(prolog.query(query))
 
-            if resultado:
-                texto = resultado[0]["Texto"]
-                st.code(texto)
-            else:
-                st.warning("Suspeito não encontrado.")
-        except Exception as e:
-            st.error(f"Erro: {e}")
-    else:
-        st.warning("Digite um nome primeiro.")
+        if resultado:
+            st.code(resultado[0]["Texto"])
+        else:
+            st.warning("Não encontrado")
+
+
+st.subheader("Inferência Reversa")
+
+if st.button("Gerar perfil do criminoso"):
+    perfil = list(prolog.query(f"perfil_necessario({crime}, P)"))
+    st.json(perfil[0]["P"])
+
+    autores = list(prolog.query(f"possivel_autor({crime}, X)"))
+
+    st.write("Possíveis autores:")
+    for a in autores:
+        st.write("-", a["X"])

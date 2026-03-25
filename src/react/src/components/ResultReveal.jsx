@@ -1,21 +1,23 @@
 import { useEffect, useState } from "react";
 
 const NAMES = { larissa: "Larissa", maria: "Maria", laura: "Laura" };
+const DEFAULT_CRIME = "roubo_quadro";
 
 function ScoreBar({ label, points }) {
-  const filled = points > 0;
+  const normalized = Number.isFinite(points) ? Math.min(1, Math.max(0, points)) : 0;
+  const width = `${Math.round(normalized * 100)}%`;
+  const text = Number.isFinite(points) ? `${Math.round(normalized * 100)}%` : `${points}`;
+
   return (
     <div className="flex items-center gap-3">
       <span className="text-neutral-400 text-sm w-44 shrink-0">{label}</span>
       <div className="flex-1 h-3 bg-neutral-800 rounded-full overflow-hidden">
         <div
-          className={`h-full rounded-full transition-all duration-700 ${filled ? "bg-gold-400" : "bg-neutral-700"}`}
-          style={{ width: filled ? "100%" : "0%" }}
+          className={`h-full rounded-full transition-all duration-700 ${normalized > 0 ? "bg-gold-400" : "bg-neutral-700"}`}
+          style={{ width }}
         />
       </div>
-      <span className="text-gold-300 font-bold text-sm w-6 text-right">
-        +{points}
-      </span>
+      <span className="text-gold-300 font-bold text-sm w-10 text-right">{text}</span>
     </div>
   );
 }
@@ -31,32 +33,35 @@ function SuspectResult({ data, isUserPick }) {
   const lines = data.texto.split("\n").filter((l) => l.startsWith("- "));
 
   const scoreMap = lines.map((line) => {
-    const match = line.match(/\(\+(\d)\)/);
-    return { label: line.replace(/\s*\(\+\d\)/, "").replace("- ", ""), points: match ? parseInt(match[1]) : 0 };
+    const clean = line.replace("- ", "").trim();
+    const lower = clean.toLowerCase();
+    let points = 0;
+
+    if (lower.includes("sim")) {
+      points = 1;
+    } else if (lower.includes("não") || lower.includes("nao")) {
+      points = 0;
+    } else {
+      const num = clean.match(/([0-9]+\.?[0-9]*)/);
+      points = num ? Number(parseFloat(num[1])) : 0;
+    }
+
+    return { label: clean, points };
   });
 
   return (
-    <div
-      className={`${style.bg} ${style.border} border rounded-2xl p-6 md:p-8 ${isUserPick ? "ring-2 ring-gold-400/50" : ""}`}
-    >
+    <div className={`${style.bg} ${style.border} border rounded-2xl p-6 md:p-8 ${isUserPick ? "ring-2 ring-gold-400/50" : ""}`}>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="font-serif text-2xl font-bold text-gold-100">
-            {NAMES[data.nome] || data.nome}
-          </h3>
-          {isUserPick && (
-            <span className="text-gold-400 text-xs tracking-widest uppercase">
-              Seu palpite
-            </span>
-          )}
+          <h3 className="font-serif text-2xl font-bold text-gold-100">{NAMES[data.nome] || data.nome}</h3>
+          {isUserPick && <span className="text-gold-400 text-xs tracking-widest uppercase">Seu palpite</span>}
         </div>
+
         <div className="text-right">
           <div className={`text-3xl font-bold ${style.text}`}>
-            {data.pontuacao}/4
+            {typeof data.pontuacao === "number" ? `${Math.round(data.pontuacao * 100)}%` : data.pontuacao}
           </div>
-          <span className={`text-xs font-semibold ${style.text}`}>
-            {style.label} suspeita
-          </span>
+          <span className={`text-xs font-semibold ${style.text}`}>{style.label} suspeita</span>
         </div>
       </div>
 
@@ -65,6 +70,8 @@ function SuspectResult({ data, isUserPick }) {
           <ScoreBar key={i} label={s.label} points={s.points} />
         ))}
       </div>
+
+      <pre className="mt-4 p-3 bg-surface-lighter rounded-lg text-xs text-neutral-300 whitespace-pre-wrap">{data.texto}</pre>
     </div>
   );
 }
@@ -78,9 +85,9 @@ export default function ResultReveal({ selectedId, onRestart }) {
     async function fetchData() {
       try {
         const [suspRes, ...expRes] = await Promise.all([
-          fetch("/api/suspeitos").then((r) => r.json()),
+          fetch(`/api/suspeitos?crime=${DEFAULT_CRIME}`).then((r) => r.json()),
           ...["larissa", "maria", "laura"].map((n) =>
-            fetch(`/api/explicacao/${n}`).then((r) => r.json())
+            fetch(`/api/explicacao/${n}?crime=${DEFAULT_CRIME}`).then((r) => r.json())
           ),
         ]);
 
@@ -104,9 +111,7 @@ export default function ResultReveal({ selectedId, onRestart }) {
   if (loading) {
     return (
       <section className="min-h-screen flex items-center justify-center">
-        <div className="text-gold-400 text-xl animate-pulse font-serif">
-          Analisando evidências...
-        </div>
+        <div className="text-gold-400 text-xl animate-pulse font-serif">Analisando evidências...</div>
       </section>
     );
   }
@@ -150,11 +155,7 @@ export default function ResultReveal({ selectedId, onRestart }) {
 
         <div className="space-y-6">
           {selectedFirst.map((data) => (
-            <SuspectResult
-              key={data.nome}
-              data={data}
-              isUserPick={data.nome === selectedId}
-            />
+            <SuspectResult key={data.nome} data={data} isUserPick={data.nome === selectedId} />
           ))}
         </div>
 
