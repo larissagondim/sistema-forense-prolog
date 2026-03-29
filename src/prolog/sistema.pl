@@ -1,56 +1,34 @@
-% CRIMES
+:- dynamic presente/3.
+:- dynamic situacao_digital/2.
+:- dynamic profissao/2.
+:- dynamic alibi_status/2.
+
 crime(roubo_quadro).
-crime(furto_joia).
-
-% LOCAIS DOS CRIMES
 local_crime(roubo_quadro, sala_principal).
-local_crime(furto_joia, sala_secundaria).
 
-% PRESENCA (PESSOA, LOCAL, HORA)
-presente(larissa, sala_principal, 9).
-presente(larissa, sala_principal, 11).
-presente(maria, sala_principal, 10).
-presente(laura, corredor, 10).
-presente(laura, sala_secundaria, 20).
+suspeito(larissa).
+suspeito(maria).
+suspeito(laura).
 
-% DOMINIO DE PESSOAS (Garante nomes unicos)
-pessoa(P) :- 
-    setof(Nome, L^H^presente(Nome, L, H), Pessoas),
-    member(P, Pessoas).
+pessoa(P) :- suspeito(P).
 
-% PESOS E CARACTERISTICAS
-peso_local(sala_principal, 3).
-peso_local(sala_seguranca, 2).
-peso_local(corredor, 1).
-peso_local(sala_secundaria, 0).
+% Pesos de Evidência
+peso_local(sala_principal, 27).
+peso_local(sala_seguranca, 9).
+peso_local(corredor, 3).
 
-% SITUACAO DIGITAL
-situacao_digital(larissa, mensagens_apagadas).
-situacao_digital(maria, historico_apagado).
-situacao_digital(laura, fotos_obra).
+peso_digital(mensagens_apagadas, 6).
+peso_digital(historico_apagado, 4).
+peso_digital(fotos_recentes, 2).
 
-peso_digital(mensagens_apagadas, 3).
-peso_digital(historico_apagado, 2).
-peso_digital(fotos_obra, 1).
+peso_profissao(restauradora, 1.2).
+peso_profissao(curadora, 0.8).
+peso_profissao(historiadora, 0.4).
 
-% PROFISSAO
-profissao(larissa, restauradora).
-profissao(maria, curadora).
-profissao(laura, historiadora).
-
-peso_profissao(restauradora, 3).
-peso_profissao(curadora, 2).
-peso_profissao(historiadora, 1).
-
-% ALIBI
-alibi_status(larissa, sim).
-alibi_status(maria, sim).
-alibi_status(laura, nao).
-
-peso_alibi(nao, 4).
+peso_alibi(nao, 5).
 peso_alibi(sim, 0).
 
-% REGRAS DE PONTUACAO
+% Cálculos de Pontuação
 pontuacao_local(Pessoa, Crime, Pontos) :-
     local_crime(Crime, Local),
     presente(Pessoa, Local, _),
@@ -72,16 +50,6 @@ pontuacao_alibi(Pessoa, Pontos) :-
     peso_alibi(Status, Pontos), !.
 pontuacao_alibi(_, 0).
 
-% HABILIDADES E REQUISITOS
-habilidade(larissa, desativar_laser, 9).
-habilidade(maria, manipular_objetos, 8).
-habilidade(laura, manipular_objetos, 6).
-
-necessario(roubo_quadro, desativar_laser).
-necessario(roubo_quadro, manipular_objetos).
-necessario(furto_joia, manipular_objetos).
-
-% LOGICA DE INFERENCIA
 pontuacao_total(Pessoa, Crime, Total) :-
     pontuacao_local(Pessoa, Crime, P1),
     pontuacao_digital(Pessoa, P2),
@@ -89,43 +57,24 @@ pontuacao_total(Pessoa, Crime, Total) :-
     pontuacao_alibi(Pessoa, P4),
     Total is P1 + P2 + P3 + P4.
 
-nivel_suspeita(Pessoa, Crime, alta) :-
-    pontuacao_total(Pessoa, Crime, P), P >= 8.
-nivel_suspeita(Pessoa, Crime, media) :-
-    pontuacao_total(Pessoa, Crime, P), P >= 4, P < 8.
-nivel_suspeita(Pessoa, Crime, baixa) :-
-    pontuacao_total(Pessoa, Crime, P), P < 4.
+% Níveis de Suspeita
+nivel_suspeita(Pessoa, Crime, alta) :- pontuacao_total(Pessoa, Crime, P), P >= 30.
+nivel_suspeita(Pessoa, Crime, media) :- pontuacao_total(Pessoa, Crime, P), P >= 15, P < 30.
+nivel_suspeita(Pessoa, Crime, baixa) :- pontuacao_total(Pessoa, Crime, P), P < 15.
 
-% RANKING (Usa setof internamente para evitar duplicados por pessoa)
 ranking(Crime, ListaOrdenada) :-
     setof([P, Pessoa], (pessoa(Pessoa), pontuacao_total(Pessoa, Crime, P)), Lista),
     reverse(Lista, ListaOrdenada).
 
-% EXPLICACAO
-explica(Pessoa, Crime, Texto) :-
-    pontuacao_total(Pessoa, Crime, P),
-    nivel_suspeita(Pessoa, Crime, Nivel),
-    pontuacao_local(Pessoa, Crime, PL),
-    pontuacao_digital(Pessoa, PD),
-    pontuacao_profissao(Pessoa, PP),
-    pontuacao_alibi(Pessoa, PA),
-    format(atom(Texto),
-'==== ANALISE FORENSE ====~n\
-Crime: ~w~n\
-Suspeito: ~w~n\
-Pontuacao Total: ~w~n\
-Nivel: ~w~n\
-~nDetalhes:~n\
-- Local: ~w~n\
-- Digital: ~w~n\
-- Profissao: ~w~n\
-- Alibi: ~w~n',
-    [Crime, Pessoa, P, Nivel, PL, PD, PP, PA]).
+% Definições de Perfil Técnico
+necessario(roubo_quadro, restauradora).
+necessario(roubo_quadro, curadora).
+necessario(roubo_quadro, historiadora).
 
-% INFERENCIA REVERSA
-perfil_necessario(Crime, Habilidades) :-
-    findall(H, necessario(Crime, H), Habilidades).
+perfil_necessario(Crime, Profissoes) :- findall(P, necessario(Crime, P), Profissoes).
 
+% Ajustado: Verifica se a profissão da pessoa é UMA das necessárias para o crime
 possivel_autor(Crime, Pessoa) :-
     pessoa(Pessoa),
-    forall(necessario(Crime, H), habilidade(Pessoa, H, _)).
+    profissao(Pessoa, Prof),
+    necessario(Crime, Prof).
