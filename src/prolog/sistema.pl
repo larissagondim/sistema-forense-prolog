@@ -13,12 +13,12 @@ presente(maria, sala_principal, 10).
 presente(laura, corredor, 10).
 presente(laura, sala_secundaria, 20).
 
-% DOMINIO DE PESSOAS
-pessoa(P) :- presente(P, _, _).
+% DOMINIO DE PESSOAS (Garante nomes unicos)
+pessoa(P) :- 
+    setof(Nome, L^H^presente(Nome, L, H), Pessoas),
+    member(P, Pessoas).
 
-% PESOS E CARACTERÍSTICAS:
-
-% LOCAL
+% PESOS E CARACTERISTICAS
 peso_local(sala_principal, 3).
 peso_local(sala_seguranca, 2).
 peso_local(corredor, 1).
@@ -50,8 +50,7 @@ alibi_status(laura, nao).
 peso_alibi(nao, 4).
 peso_alibi(sim, 0).
 
-% REGRAS DE PONTUAÇÃO
-
+% REGRAS DE PONTUACAO
 pontuacao_local(Pessoa, Crime, Pontos) :-
     local_crime(Crime, Local),
     presente(Pessoa, Local, _),
@@ -74,7 +73,6 @@ pontuacao_alibi(Pessoa, Pontos) :-
 pontuacao_alibi(_, 0).
 
 % HABILIDADES E REQUISITOS
-
 habilidade(larissa, desativar_laser, 9).
 habilidade(maria, manipular_objetos, 8).
 habilidade(laura, manipular_objetos, 6).
@@ -83,8 +81,7 @@ necessario(roubo_quadro, desativar_laser).
 necessario(roubo_quadro, manipular_objetos).
 necessario(furto_joia, manipular_objetos).
 
-% LOGICA DE INFERÊNCIA
-
+% LOGICA DE INFERENCIA
 pontuacao_total(Pessoa, Crime, Total) :-
     pontuacao_local(Pessoa, Crime, P1),
     pontuacao_digital(Pessoa, P2),
@@ -99,13 +96,10 @@ nivel_suspeita(Pessoa, Crime, media) :-
 nivel_suspeita(Pessoa, Crime, baixa) :-
     pontuacao_total(Pessoa, Crime, P), P < 4.
 
-% RANKING
+% RANKING (Usa setof internamente para evitar duplicados por pessoa)
 ranking(Crime, ListaOrdenada) :-
-    findall([P, Pessoa],
-        (pessoa(Pessoa), pontuacao_total(Pessoa, Crime, P)),
-        Lista),
-    Lista \= [], 
-    sort(1, @>=, Lista, ListaOrdenada).
+    setof([P, Pessoa], (pessoa(Pessoa), pontuacao_total(Pessoa, Crime, P)), Lista),
+    reverse(Lista, ListaOrdenada).
 
 % EXPLICACAO
 explica(Pessoa, Crime, Texto) :-
