@@ -3,77 +3,101 @@ from pyswip import Prolog
 import os
 
 prolog = Prolog()
+CRIME_ALVO = "roubo_quadro"
 
+# Configuração de caminho
 base_dir = os.path.dirname(os.path.abspath(__file__))
-caminho_arquivo = os.path.join(base_dir, "sistema.pl")
+caminho_prolog = os.path.join(base_dir, "..", "prolog", "sistema.pl")
 
-if not os.path.exists(caminho_arquivo):
-    caminho_arquivo = os.path.join(base_dir, "..", "prolog", "sistema.pl")
+if os.path.exists(caminho_prolog):
+    prolog.consult(caminho_prolog)
+else:
+    # Fallback para o mesmo diretório
+    caminho_prolog = os.path.join(base_dir, "sistema.pl")
+    if os.path.exists(caminho_prolog):
+        prolog.consult(caminho_prolog)
+    else:
+        st.error("Arquivo sistema.pl nao encontrado.")
+        st.stop()
 
-prolog.consult(os.path.abspath(caminho_arquivo))
+st.set_page_config(page_title="Investigacao Forense", layout="wide")
 
-st.set_page_config(page_title="Sistema Forense", layout="wide")
-
-st.title("Sistema de Investigacao Forense")
-
-try:
-    crimes = [c["C"] for c in prolog.query("crime(C)")]
-    crime_selecionado = st.selectbox("Selecione o crime", crimes)
-except:
-    st.error("Erro ao carregar base Prolog")
-    st.stop()
-
+st.title("Sistema de investigacao: Roubo do Quadro")
 st.divider()
 
-col1, col2 = st.columns(2)
+col1, col2 = st.columns([1, 1.5])
 
 with col1:
-    st.subheader("Ranking de Suspeitos")
-    if st.button("Gerar Ranking"):
-        resultado = list(prolog.query(f"ranking({crime_selecionado}, Lista)"))
-        
-        if not resultado or not resultado[0]["Lista"]:
-            st.info("Nenhum dado encontrado")
-        else:
-            lista = resultado[0]["Lista"]
-            for item in lista:
-                score = item[0]
-                pessoa = item[1]
-
+    st.subheader("Ranking geral")
+    if st.button("Atualizar ranking"):
+        res = list(prolog.query(f"ranking({CRIME_ALVO}, Lista)"))
+        if res and res[0]["Lista"]:
+            for score, pessoa in res[0]["Lista"]:
+                nome = pessoa.decode('utf-8') if isinstance(pessoa, bytes) else pessoa
                 if score >= 8:
-                    st.error(f"ALTA SUSPEITA: {pessoa} - Pontos: {score}")
+                    st.error(f"{nome.upper()}: {score} pontos (ALTA)")
                 elif score >= 4:
-                    st.warning(f"MEDIA SUSPEITA: {pessoa} - Pontos: {score}")
+                    st.warning(f"{nome.upper()}: {score} pontos (MEDIA)")
                 else:
-                    st.success(f"BAIXA SUSPEITA: {pessoa} - Pontos: {score}")
+                    st.success(f"{nome.upper()}: {score} pontos (BAIXA)")
 
 with col2:
-    st.subheader("Explicacao")
-    nome = st.text_input("Nome do suspeito")
-    if st.button("Analisar"):
-        if nome:
-            try:
-                query = f"explica({nome.lower()}, {crime_selecionado}, Texto)"
-                res = list(prolog.query(query))
-                if res:
-                    st.text_area("Resultado:", res[0]["Texto"], height=200)
-                else:
-                    st.warning("Suspeito nao encontrado")
-            except:
-                st.error("Erro na consulta")
+    st.subheader("Consulta individual de cada suspeito")
+    nome_input = st.text_input("Digite o nome do suspeito").lower()
+    
+    if st.button("Exibir dados"):
+        if nome_input:
+            p_local = list(prolog.query(f"pontuacao_local({nome_input}, {CRIME_ALVO}, P)"))
+            p_digital = list(prolog.query(f"pontuacao_digital({nome_input}, P)"))
+            p_prof = list(prolog.query(f"pontuacao_profissao({nome_input}, P)"))
+            p_alibi = list(prolog.query(f"pontuacao_alibi({nome_input}, P)"))
+            
+            res_prof = list(prolog.query(f"profissao({nome_input}, X)"))
+            res_dig = list(prolog.query(f"situacao_digital({nome_input}, X)"))
+            res_alibi = list(prolog.query(f"alibi_status({nome_input}, X)"))
+            
+            res_total = list(prolog.query(f"pontuacao_total({nome_input}, {CRIME_ALVO}, Total)"))
+            res_nivel = list(prolog.query(f"nivel_suspeita({nome_input}, {CRIME_ALVO}, Nivel)"))
+
+            if res_total:
+                st.markdown(f"### Relatorio: {nome_input.upper()}")
+                
+                c1, c2, c3 = st.columns(3)
+                c1.metric("Pontuacao Total", res_total[0]['Total'])
+                c2.metric("Nivel de Risco", res_nivel[0]['Nivel'].upper())
+                
+                st.write("---")
+                st.write("**Detalhamento de Evidencias:**")
+
+                prof = res_prof[0]['X'] if res_prof else "Nao informada"
+                dig = res_dig[0]['X'] if res_dig else "Nenhuma"
+                ali = res_alibi[0]['X'] if res_alibi else "Desconhecido"
+                
+                dados = {
+                    "Categoria": ["Profissao", "Evidencia Digital", "Presenca no Local", "Alibi"],
+                    "Status": [prof, dig, "Identificada", ali],
+                    "Pontos": [
+                        p_prof[0]['P'] if p_prof else 0,
+                        p_digital[0]['P'] if p_digital else 0,
+                        p_local[0]['P'] if p_local else 0,
+                        p_alibi[0]['P'] if p_alibi else 0
+                    ]
+                }
+                st.table(dados)
+            else:
+                st.error("Suspeito não encontrado na base de dados.")
 
 st.divider()
-st.subheader("Inferencia Reversa")
 
-if st.button("Ver Perfil e Autores"):
-    perfil = list(prolog.query(f"perfil_necessario({crime_selecionado}, P)"))
+if st.checkbox("Verificar requisitos profissionais do Crime"):
+    perfil = list(prolog.query(f"perfil_necessario({CRIME_ALVO}, P)"))
     if perfil:
-        st.write("Requisitos:", perfil[0]["P"])
-    
-    autores = list(prolog.query(f"possivel_autor({crime_selecionado}, X)"))
+        profs = [p.decode('utf-8') if isinstance(p, bytes) else p for p in perfil[0]['P']]
+        st.info(f"O crime exige conhecimento de: {', '.join(profs)}")
+        
+    autores = list(prolog.query(f"possivel_autor({CRIME_ALVO}, X)"))
     if autores:
-        st.write("Pessoas com capacidade tecnica:")
-        for a in autores:
-            st.write("-", a["X"])
+        lista = [a['X'].decode('utf-8') if isinstance(a['X'], bytes) else a['X'] for a in autores]
+        st.write(f"Individuos que possuem todas as profissoes: {', '.join(lista)}")
     else:
-        st.info("Nenhum autor compativel encontrado")
+        st.write("Nenhum suspeito possui o conjunto completo de profissoes exigidas.")
