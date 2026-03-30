@@ -80,10 +80,10 @@ def get_detalhes(nome):
         "digital": limpar(dig["X"]) if dig else "desconhecido",
         "profissao": limpar(prof["X"]) if prof else "desconhecido",
         "alibi": limpar(ali["X"]) if ali else "desconhecido",
-        "pontos_local": int(p_loc["P"]) if p_loc else 0,
-        "pontos_digital": int(p_dig["P"]) if p_dig else 0,
-        "pontos_profissao": int(p_prof["P"]) if p_prof else 0,
-        "pontos_alibi": int(p_ali["P"]) if p_ali else 0,
+        "pontos_local": float(p_loc["P"]) if p_loc else 0,
+        "pontos_digital": float(p_dig["P"]) if p_dig else 0,
+        "pontos_profissao": float(p_prof["P"]) if p_prof else 0,
+        "pontos_alibi": float(p_ali["P"]) if p_ali else 0,
     }
 
 
@@ -97,7 +97,7 @@ def get_suspeitos():
                 detalhes = get_detalhes(nome)
                 resultados.append({
                     "nome": nome,
-                    "pontuacao": int(r["T"]),
+                    "pontuacao": float(r["T"]),
                     "detalhes": detalhes,
                 })
         resultados.sort(key=lambda x: x["pontuacao"], reverse=True)

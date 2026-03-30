@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 
 const NAMES = { larissa: "Larissa", maria: "Maria Luíza", laura: "Laura" };
-const AVATARS = { larissa: "👩‍💻", maria: "👩‍🔬", laura: "👩‍🎨" };
+
+const PROF_AVATARS = {
+  restauradora: "👩‍🎨",
+  curadora: "👩‍💼",
+  historiadora: "👩‍🏫",
+};
 
 const LOCAL_LABELS = {
   sala_principal: "Sala Principal",
@@ -64,7 +69,7 @@ export default function CharacterCards({ onSelect }) {
   useEffect(() => {
     fetch("/api/suspeitos")
       .then((r) => r.json())
-      .then((data) => setSuspeitos(data))
+      .then((data) => setSuspeitos(data.sort(() => Math.random() - 0.5)))
       .catch((err) => console.error("Erro:", err))
       .finally(() => setLoading(false));
   }, []);
@@ -103,7 +108,7 @@ export default function CharacterCards({ onSelect }) {
                 className="group bg-surface-light border border-neutral-800 rounded-2xl p-6 text-left transition-all duration-300 hover:border-gold-500/50 hover:shadow-[0_0_40px_rgba(46,125,50,0.1)] hover:scale-[1.02] cursor-pointer"
                 style={{ animationDelay: `${i * 150}ms` }}
               >
-                <div className="text-5xl mb-4">{AVATARS[s.nome]}</div>
+                <div className="text-5xl mb-4">{PROF_AVATARS[d.profissao] || "👤"}</div>
 
                 <h3 className="font-serif text-2xl font-bold text-gold-200 mb-4 group-hover:text-gold-300 transition-colors">
                   {NAMES[s.nome] || s.nome}

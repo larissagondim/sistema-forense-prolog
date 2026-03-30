@@ -25,7 +25,7 @@ peso_profissao(restauradora, 3).
 peso_profissao(curadora, 2).
 peso_profissao(historiadora, 1).
 
-peso_alibi(nao, 4).
+peso_alibi(nao, 0.5).
 peso_alibi(sim, 0).
 
 % Cálculos de Pontuação

@@ -2,6 +2,12 @@ import { useEffect, useState } from "react";
 
 const NAMES = { larissa: "Larissa", maria: "Maria Luíza", laura: "Laura" };
 
+const PROF_AVATARS = {
+  restauradora: "👩‍🎨",
+  curadora: "👩‍💼",
+  historiadora: "👩‍🏫",
+};
+
 function SuspectResult({ s, isSelected, isGuilty }) {
   return (
     <div
@@ -12,17 +18,15 @@ function SuspectResult({ s, isSelected, isGuilty }) {
       }`}
     >
       <div className="flex items-center gap-4">
-        <span
-          className={`text-4xl ${isGuilty ? "" : "grayscale opacity-50"}`}
-        >
-          {isGuilty ? "🔴" : "🟢"}
+        <span className="text-4xl">
+          {PROF_AVATARS[s.detalhes?.profissao] || "👤"}
         </span>
         <div className="flex-1">
           <h3 className="font-serif text-xl font-bold text-gold-200">
             {NAMES[s.nome] || s.nome}
           </h3>
           <p className={`text-sm font-semibold mt-1 ${isGuilty ? "text-red-400" : "text-emerald-400"}`}>
-            {isGuilty ? "Culpada" : "Inocente"}
+            {isGuilty ? "Culpada" : "Inocente"} — {s.pontuacao} pontos
           </p>
         </div>
         {isSelected && (

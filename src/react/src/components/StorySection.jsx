@@ -35,8 +35,7 @@ export default function StorySection({ onStart }) {
             Temendo a própria vida, decidiu não entregar nenhum culpado porém,
             querendo diminuir ainda mais a pena, falou{" "}
             <strong className="text-gold-300">3 funcionárias do museu</strong>{" "}
-            garantindo que uma delas está envolvida e as outras duas são
-            inocentes.
+            garantindo que uma delas está envolvida.
           </p>
           <p className="text-gold-200 font-semibold text-base mt-1">
             Sua função, Detetive, é analisar as evidências e descobrir qual
