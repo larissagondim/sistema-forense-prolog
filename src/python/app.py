@@ -41,10 +41,17 @@ def randomizar_atributos():
     status_alibis = ["sim", "sim", "nao"]
     random.shuffle(status_alibis)
 
+    locs = LOCAIS[:]
+    digs = DIGITAIS[:]
+    profs = PROFISSOES[:]
+    random.shuffle(locs)
+    random.shuffle(digs)
+    random.shuffle(profs)
+
     for i, s in enumerate(SUSPEITOS):
-        list(prolog.query(f"assertz(presente({s},{random.choice(LOCAIS)},{random.choice(HORAS)}))"))
-        list(prolog.query(f"assertz(situacao_digital({s},{random.choice(DIGITAIS)}))"))
-        list(prolog.query(f"assertz(profissao({s},{random.choice(PROFISSOES)}))"))
+        list(prolog.query(f"assertz(presente({s},{locs[i]},{random.choice(HORAS)}))"))
+        list(prolog.query(f"assertz(situacao_digital({s},{digs[i]}))"))
+        list(prolog.query(f"assertz(profissao({s},{profs[i]}))"))
         list(prolog.query(f"assertz(alibi_status({s},{status_alibis[i]}))"))
 
 if "inicializado" not in st.session_state:
@@ -81,11 +88,12 @@ with col2:
             prof = limpar(list(prolog.query(f"profissao({nome_sel}, X)"))[0]["X"])
             dig  = limpar(list(prolog.query(f"situacao_digital({nome_sel}, X)"))[0]["X"])
             ali  = limpar(list(prolog.query(f"alibi_status({nome_sel}, X)"))[0]["X"])
+            loc  = limpar(list(prolog.query(f"presente({nome_sel}, X, _)"))[0]["X"])
             v_loc = float(list(prolog.query(f"pontuacao_local({nome_sel}, {CRIME_ALVO}, P)"))[0]["P"])
 
             st.table({
                 "Evidência": ["Profissão", "Digital", "Álibi", "Localização"],
-                "Status": [prof, dig, ali, "Detectado"],
+                "Status": [prof, dig, ali, loc],
                 "Pontos": [
                     float(list(prolog.query(f"pontuacao_profissao({nome_sel}, P)"))[0]["P"]),
                     float(list(prolog.query(f"pontuacao_digital({nome_sel}, P)"))[0]["P"]),

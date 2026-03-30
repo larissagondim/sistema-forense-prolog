@@ -3,13 +3,13 @@
 @theme {
   --font-serif: "Playfair Display", serif;
   --font-sans: "Inter", sans-serif;
-  --color-gold-50: #fdf8e8;
-  --color-gold-100: #f9edbe;
-  --color-gold-200: #f5e08a;
-  --color-gold-300: #f0d056;
-  --color-gold-400: #d4a017;
-  --color-gold-500: #b8860b;
-  --color-gold-600: #8b6914;
+  --color-gold-50: #e8f5e9;
+  --color-gold-100: #c8e6c9;
+  --color-gold-200: #a5d6a7;
+  --color-gold-300: #66bb6a;
+  --color-gold-400: #388e3c;
+  --color-gold-500: #2e7d32;
+  --color-gold-600: #1b5e20;
   --color-surface: #111111;
   --color-surface-light: #1a1a1a;
   --color-surface-lighter: #242424;

@@ -13,24 +13,23 @@ suspeito(laura).
 pessoa(P) :- suspeito(P).
 
 % Pesos de Evidência
-peso_local(sala_principal, 27).
-peso_local(sala_seguranca, 9).
-peso_local(corredor, 3).
+peso_local(sala_principal, 3).
+peso_local(sala_seguranca, 2).
+peso_local(corredor, 1).
 
-peso_digital(mensagens_apagadas, 6).
-peso_digital(historico_apagado, 4).
-peso_digital(fotos_recentes, 2).
+peso_digital(mensagens_apagadas, 3).
+peso_digital(historico_apagado, 2).
+peso_digital(fotos_recentes, 1).
 
-peso_profissao(restauradora, 1.2).
-peso_profissao(curadora, 0.8).
-peso_profissao(historiadora, 0.4).
+peso_profissao(restauradora, 3).
+peso_profissao(curadora, 2).
+peso_profissao(historiadora, 1).
 
-peso_alibi(nao, 5).
+peso_alibi(nao, 4).
 peso_alibi(sim, 0).
 
 % Cálculos de Pontuação
-pontuacao_local(Pessoa, Crime, Pontos) :-
-    local_crime(Crime, Local),
+pontuacao_local(Pessoa, _, Pontos) :-
     presente(Pessoa, Local, _),
     peso_local(Local, Pontos), !.
 pontuacao_local(_, _, 0).
